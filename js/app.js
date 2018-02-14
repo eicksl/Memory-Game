@@ -14,6 +14,7 @@
  *   - add each card's HTML to the page
  */
 function displayCards() {
+  /*
   let cards = document.getElementsByClassName('card');
   deck = shuffle(deck);
   for (let i = 0; i < deck.length; i++) {
@@ -22,12 +23,14 @@ function displayCards() {
     icon.classList.remove(currentIcon);
     icon.classList.add(deck[i]);
 
-    setTimeout(() => cards[i].className += ' open show', 500);
+    setTimeout(() => cards[i].classList.toggle('flipped'), 500);
     //cards[i].className += ' open show';
   }
-  //cards[0].addEventListener('click', function() {
-  //  this.className += ' open show';
-  //});
+  */
+  const card = document.querySelector('.card');
+  card.addEventListener('click', function() {
+    this.classList.toggle('flipped');
+  });
 }
 
 
@@ -47,7 +50,7 @@ function shuffle(array) {
 }
 
 
-//displayCards();
+displayCards();
 
 
 /*
