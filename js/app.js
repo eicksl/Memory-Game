@@ -47,7 +47,7 @@ function shuffle(array) {
 }
 
 
-displayCards();
+//displayCards();
 
 
 /*
