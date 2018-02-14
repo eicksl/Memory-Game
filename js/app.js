@@ -1,56 +1,125 @@
-/*
- * Create a list that holds all cards
- */
- let deck = ['fa-diamond', 'fa-diamond', 'fa-anchor', 'fa-anchor',
-            'fa-paper-plane-o', 'fa-paper-plane-o', 'fa-bolt', 'fa-bolt',
-            'fa-cube', 'fa-cube', 'fa-bicycle', 'fa-bicycle',
-            'fa-bomb', 'fa-bomb', 'fa-leaf', 'fa-leaf'];
+const NUM_OF_CARDS = 16;
+const BOARD_PREVIEW = 3500;  // Milliseconds to preview cards at start
 
 
-/*
- * Display the cards on the page
- *   - shuffle the list of cards using the shuffle method
- *   - loop through each card and create its HTML
- *   - add each card's HTML to the page
- */
-function displayCards() {
-  /*
-  let cards = document.getElementsByClassName('card');
-  deck = shuffle(deck);
-  for (let i = 0; i < deck.length; i++) {
-    const icon = cards[i].firstElementChild;
-    const currentIcon = icon.classList[1];
-    icon.classList.remove(currentIcon);
-    icon.classList.add(deck[i]);
-
-    setTimeout(() => cards[i].classList.toggle('flipped'), 500);
-    //cards[i].className += ' open show';
+class Game {
+  constructor() {
+    this.deck = ['fa-diamond', 'fa-diamond', 'fa-anchor', 'fa-anchor',
+                 'fa-paper-plane-o', 'fa-paper-plane-o', 'fa-bolt', 'fa-bolt',
+                 'fa-cube', 'fa-cube', 'fa-bicycle', 'fa-bicycle',
+                 'fa-bomb', 'fa-bomb', 'fa-leaf', 'fa-leaf'];
+    this.cards = document.getElementsByClassName('card');
   }
-  */
-  const card = document.querySelector('.card');
-  card.addEventListener('click', function() {
-    this.classList.toggle('flipped');
-  });
+
+  // Shuffle function from http://stackoverflow.com/a/2450976
+  static shuffle(array) {
+      var currentIndex = array.length, temporaryValue, randomIndex;
+
+      while (currentIndex !== 0) {
+          randomIndex = Math.floor(Math.random() * currentIndex);
+          currentIndex -= 1;
+          temporaryValue = array[currentIndex];
+          array[currentIndex] = array[randomIndex];
+          array[randomIndex] = temporaryValue;
+      }
+
+      return array;
+  }
+
+  displayModal() {
+    console.log('Congratulations!');
+  }
+
 }
 
 
-// Shuffle function from http://stackoverflow.com/a/2450976
-function shuffle(array) {
-    var currentIndex = array.length, temporaryValue, randomIndex;
+class Board extends Game {
+  constructor() {
+    super();
+    this.openCards = [];
+    this.lastCard = null;
+  }
 
-    while (currentIndex !== 0) {
-        randomIndex = Math.floor(Math.random() * currentIndex);
-        currentIndex -= 1;
-        temporaryValue = array[currentIndex];
-        array[currentIndex] = array[randomIndex];
-        array[randomIndex] = temporaryValue;
+  handleMatch(card, iconName) {
+    this.addToOpenCards(iconName);
+    this.lastCard = null;
+    if (this.openCards.length >= NUM_OF_CARDS) {
+      super.displayModal();
     }
+    // ANIMATION
+  }
 
-    return array;
+  handleMismatch(card, iconName) {
+    const lastCard = this.lastCard;
+    this.lastCard = null;
+    this.deleteFromOpenCards(iconName);
+    setTimeout(() => {
+      [card, lastCard].forEach(elem => {
+        elem.classList.toggle('flipped');
+        this.setFlipEvent(elem);
+      });
+    }, 1000);
+    // ANIMATION
+  }
+
+  addToOpenCards(iconName) {
+    this.openCards.push(iconName);
+  }
+
+  deleteFromOpenCards(iconName) {
+    this.openCards.pop(iconName);
+  }
+
+  getCardIconName(card) {
+    return card.firstElementChild.firstElementChild.classList[1];
+  }
+
+  setFlipEvent(card) {
+    const self = this;
+    card.addEventListener('click', function() {
+      const iconName = self.getCardIconName(this);
+      this.classList.toggle('flipped');
+      if (!self.lastCard) {
+        self.addToOpenCards(iconName);
+        self.lastCard = card;
+      }
+      else {
+        if (iconName === self.getCardIconName(self.lastCard)) {
+          self.handleMatch(card, iconName);
+        }
+        else {
+          self.handleMismatch(card, iconName);
+        }
+      }
+    }, {once: true});
+  }
+
+  displayCards() {
+    this.deck = Game.shuffle(this.deck);
+    for (let i = 0; i < this.deck.length; i++) {
+      const iconElem = this.cards[i].firstElementChild.firstElementChild;
+      const iconName = iconElem.classList[1];
+      iconElem.classList.remove(iconName);
+      iconElem.classList.add(this.deck[i]);
+      setTimeout(() => this.cards[i].classList.toggle('flipped'), 500);
+      setTimeout(() => this.cards[i].classList.toggle('flipped'), BOARD_PREVIEW);
+    }
+  }
+
+  startGame() {
+    this.displayCards();
+    setTimeout(() => {
+      for (const card of this.cards) {
+        this.setFlipEvent(card);
+      }
+    }, BOARD_PREVIEW);
+  }
+
 }
 
 
-displayCards();
+const board = new Board();
+board.startGame();
 
 
 /*
