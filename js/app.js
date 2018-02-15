@@ -1,19 +1,37 @@
 const NUM_OF_CARDS = 16;
+const CARD_FLIP_SPEED = 1000;
 const BOARD_PREVIEW = 3500;  // Milliseconds to preview cards at start
 
 
 class Game {
   constructor() {
+    this.cards = document.getElementsByClassName('card');
     this.deck = ['fa-diamond', 'fa-diamond', 'fa-anchor', 'fa-anchor',
                  'fa-paper-plane-o', 'fa-paper-plane-o', 'fa-bolt', 'fa-bolt',
                  'fa-cube', 'fa-cube', 'fa-bicycle', 'fa-bicycle',
                  'fa-bomb', 'fa-bomb', 'fa-leaf', 'fa-leaf'];
-    this.cards = document.getElementsByClassName('card');
+    this.inPlay = true;
+    // Find an AnimationEnd event that the browser recognizes
+    // Taken from https://github.com/daneden/animate.css
+    this.animationEnd = (function(el) {
+      const animations = {
+        animation: 'animationend',
+        OAnimation: 'oAnimationEnd',
+        MozAnimation: 'mozAnimationEnd',
+        WebkitAnimation: 'webkitAnimationEnd',
+      };
+
+      for (const t in animations) {
+        if (el.style[t] !== undefined) {
+          return animations[t];
+        }
+      }
+    })(document.createElement('div'));
   }
 
   // Shuffle function from http://stackoverflow.com/a/2450976
   static shuffle(array) {
-      var currentIndex = array.length, temporaryValue, randomIndex;
+      let currentIndex = array.length, temporaryValue, randomIndex;
 
       while (currentIndex !== 0) {
           randomIndex = Math.floor(Math.random() * currentIndex);
@@ -24,6 +42,39 @@ class Game {
       }
 
       return array;
+  }
+
+  handleAnimation(card, match=false) {
+    const wrapperElem = card.parentElement;
+    const frontElem = card.firstElementChild;
+    if (match) {
+      wrapperElem.className += ' animated bounceIn';
+      wrapperElem.addEventListener(this.animationEnd, function() {
+        this.className = this.className.replace(' animated bounceIn', '');
+      });
+      frontElem.className += ' match';
+    }
+    else {
+      wrapperElem.className += ' animated wobble';
+      wrapperElem.addEventListener(this.animationEnd, function() {
+        this.className = this.className.replace(' animated wobble', '');
+      });
+      frontElem.className += ' mismatch';
+      setTimeout(() => frontElem.classList.remove('mismatch'), 500);
+    }
+  }
+
+  removeCardEventListeners() {
+    // Copy and replace card nodes to remove click listeners and restore
+    // styles to original state
+    for (let card of this.cards) {
+      card.classList.remove('flipped');
+      card.firstElementChild.classList.remove('match');
+      const cardClone = card.cloneNode(true);
+      card.parentNode.replaceChild(cardClone, card);
+      card = null;  // Dump old node
+    }
+    this.cards = document.getElementsByClassName('card');
   }
 
   displayModal() {
@@ -38,15 +89,31 @@ class Board extends Game {
     super();
     this.openCards = [];
     this.lastCard = null;
+    document.querySelector('.restart').addEventListener('click', () => {
+      this.restartGame();
+    });
+  }
+
+  restartGame() {
+    super.removeCardEventListeners();
+    setTimeout(() => {
+      this.startGame();
+    }, CARD_FLIP_SPEED);
+
   }
 
   handleMatch(card, iconName) {
-    this.addToOpenCards(iconName);
+    const lastCard = this.lastCard;
     this.lastCard = null;
+    this.addToOpenCards(iconName);
     if (this.openCards.length >= NUM_OF_CARDS) {
       super.displayModal();
     }
-    // ANIMATION
+    setTimeout(() => {
+      [card, lastCard].forEach(elem => {
+        super.handleAnimation(elem, true);
+      });
+    }, CARD_FLIP_SPEED);
   }
 
   handleMismatch(card, iconName) {
@@ -57,9 +124,9 @@ class Board extends Game {
       [card, lastCard].forEach(elem => {
         elem.classList.toggle('flipped');
         this.setFlipEvent(elem);
+        super.handleAnimation(elem, false);
       });
-    }, 1000);
-    // ANIMATION
+    }, CARD_FLIP_SPEED);
   }
 
   addToOpenCards(iconName) {
@@ -81,14 +148,14 @@ class Board extends Game {
       this.classList.toggle('flipped');
       if (!self.lastCard) {
         self.addToOpenCards(iconName);
-        self.lastCard = card;
+        self.lastCard = this;
       }
       else {
         if (iconName === self.getCardIconName(self.lastCard)) {
-          self.handleMatch(card, iconName);
+          self.handleMatch(this, iconName);
         }
         else {
-          self.handleMismatch(card, iconName);
+          self.handleMismatch(this, iconName);
         }
       }
     }, {once: true});

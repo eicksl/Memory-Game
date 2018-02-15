@@ -108,6 +108,14 @@ h1 {
   cursor: pointer;
 }
 
+.deck .wrapper .card .front.match {
+  background: #02ccba;
+}
+
+.deck .wrapper .card .front.mismatch {
+  background: red;
+}
+
 
 /*
 .deck .card.open {
