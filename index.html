@@ -9,6 +9,7 @@
         integrity="sha384-OHBBOqpYHNsIqQy8hL1U+8OXf9hH6QRxi0+EODezv82DfnZoV7qoHAZDwMwEJvSw"
         crossorigin="anonymous">
   <link rel="stylesheet prefetch" href="https://maxcdn.bootstrapcdn.com/font-awesome/4.6.1/css/font-awesome.min.css">
+  <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monoton">
   <link rel="stylesheet prefetch" href="https://fonts.googleapis.com/css?family=Coda">
   <link rel="stylesheet" href="css/app.css">
 </head>
@@ -20,17 +21,31 @@
       </header>
 
       <section class="score-panel">
-        	<ul class="stars">
-          		<li><i class="fa fa-star"></i></li>
-          		<li><i class="fa fa-star"></i></li>
-          		<li><i class="fa fa-star"></i></li>
-        	</ul>
+          <div class="score">
+          	<ul class="stars">
+            		<li><i class="fa fa-star"></i></li>
+            		<li><i class="fa fa-star"></i></li>
+            		<li><i class="fa fa-star"></i></li>
+                <li><i class="fa fa-star"></i></li>
+                <li><i class="fa fa-star"></i></li>
+          	</ul>
 
-        	<span class="moves">3</span> Moves
+            <div class="matches-attempts">
+            	<span class="matches">0</span>
+              <span class="matches-plural">Matches</span> out of
+              <span class="attempts">0</span>
+              <span class="attempts-plural">Attempts</span>
+            </div>
+          </div>
 
           <div class="restart">
           		<i class="fa fa-repeat"></i>
         	</div>
+
+          <div class="counter">
+            <span class="time-text">Time:</span>
+            <span class="time-int">--</span>
+          </div>
       </section>
 
       <ul class="deck">

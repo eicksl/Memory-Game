@@ -1,6 +1,6 @@
 const NUM_OF_CARDS = 16;
 const CARD_FLIP_SPEED = 1000;
-const BOARD_PREVIEW = 3500;  // Milliseconds to preview cards at start
+const BOARD_PREVIEW = 6500;  // Milliseconds to preview cards at start
 
 
 class Game {
@@ -10,7 +10,10 @@ class Game {
                  'fa-paper-plane-o', 'fa-paper-plane-o', 'fa-bolt', 'fa-bolt',
                  'fa-cube', 'fa-cube', 'fa-bicycle', 'fa-bicycle',
                  'fa-bomb', 'fa-bomb', 'fa-leaf', 'fa-leaf'];
-    this.inPlay = true;
+    this.time = Math.ceil(BOARD_PREVIEW / -1000);
+    this.counter = null;
+    this.matches = 0;
+    this.attempts = 0;
     // Find an AnimationEnd event that the browser recognizes
     // Taken from https://github.com/daneden/animate.css
     this.animationEnd = (function(el) {
@@ -64,17 +67,72 @@ class Game {
     }
   }
 
-  removeCardEventListeners() {
-    // Copy and replace card nodes to remove click listeners and restore
-    // styles to original state
-    for (let card of this.cards) {
-      card.classList.remove('flipped');
-      card.firstElementChild.classList.remove('match');
-      const cardClone = card.cloneNode(true);
-      card.parentNode.replaceChild(cardClone, card);
-      card = null;  // Dump old node
+  startTimer() {
+    const timeElem = document.querySelector('.time-int');
+    const incrementTimer = () => {
+      timeElem.innerHTML = this.time;
+      this.time++;
     }
-    this.cards = document.getElementsByClassName('card');
+    this.counter = setInterval(incrementTimer, 1000);
+  }
+
+  stopTimer() {
+    const timeElem = document.querySelector('.time-int');
+    clearInterval(this.counter);
+    timeElem.innerHTML = '--';
+    this.time = Math.ceil(BOARD_PREVIEW / -1000);
+  }
+
+  incrementMatches() {
+    const matchesElem = document.querySelector('.matches');
+    let pluralSpan = document.querySelector('.matches-plural');
+    this.matches++;
+    matchesElem.innerHTML = this.matches;
+    if (this.matches === 1) {
+      pluralSpan.innerHTML = 'Match';
+    }
+    else if (pluralSpan.innerHTML === 'Match') {
+      pluralSpan.innerHTML = 'Matches';
+    }
+  }
+
+  incrementAttempts() {
+    const attemptsElem = document.querySelector('.attempts');
+    let pluralSpan = document.querySelector('.attempts-plural');
+    this.attempts++;
+    attemptsElem.innerHTML = this.attempts;
+    if (this.attempts === 1) {
+      pluralSpan.innerHTML = 'Attempt';
+    }
+    else if (pluralSpan.innerHTML === 'Attempt') {
+      pluralSpan.innerHTML = 'Attempts';
+    }
+  }
+
+  updateRating() {
+    if (this.attempts === 0) {return}
+    const matchRate = this.matches / this.attempts;
+    const starElem = document.querySelector('.stars');
+    const star = '<li><i class="fa fa-star"></i></li>';
+    if (matchRate >= 0.8) {
+        starElem.innerHTML = star.repeat(5);
+    } else if (matchRate >= 0.6) {
+        starElem.innerHTML = star.repeat(4);
+    } else if (matchRate >= 0.4) {
+        starElem.innerHTML = star.repeat(3);
+    } else if (matchRate >= 0.2) {
+        starElem.innerHTML = star.repeat(2);
+    } else {
+        starElem.innerHTML = star;
+    }
+  }
+
+  updateScore(match=true) {
+    if (match) {
+      this.incrementMatches();
+    }
+    this.incrementAttempts();
+    this.updateRating();
   }
 
   displayModal() {
@@ -117,10 +175,16 @@ class Board extends Game {
   }
 
   restartGame() {
+    const clearFields = () => {
+      this.openCards = [];
+      this.lastCard = null;
+      this.matches = 0;
+      this.attempts = 0;
+    }
     const deck = document.querySelector('.deck');
     deck.removeEventListener('click', this.flipEventHandler);
-    this.openCards = [];
-    this.lastCard = null;
+    super.stopTimer();
+    clearFields();
     for (const card of this.cards) {
       card.classList.remove('flipped');
       setTimeout(() => card.firstElementChild.classList.remove('match'), 500);
@@ -141,6 +205,7 @@ class Board extends Game {
       [card, lastCard].forEach(elem => {
         super.handleAnimation(elem, true);
       });
+      super.updateScore();
     }, CARD_FLIP_SPEED);
   }
 
@@ -151,9 +216,9 @@ class Board extends Game {
     setTimeout(() => {
       [card, lastCard].forEach(elem => {
         elem.classList.remove('flipped');
-        //this.setFlipEvent(elem);
         super.handleAnimation(elem, false);
       });
+      super.updateScore(false);
     }, CARD_FLIP_SPEED);
   }
 
@@ -168,51 +233,6 @@ class Board extends Game {
   getCardIconName(card) {
     return card.firstElementChild.firstElementChild.classList[1];
   }
-
-
-/*
-  setFlipEvent(card) {
-    const self = this;
-    card.addEventListener('click', function() {
-      const iconName = self.getCardIconName(this);
-      this.classList.toggle('flipped');
-      if (!self.lastCard) {
-        self.addToOpenCards(iconName);
-        self.lastCard = this;
-      }
-      else {
-        if (iconName === self.getCardIconName(self.lastCard)) {
-          self.handleMatch(this, iconName);
-        }
-        else {
-          self.handleMismatch(this, iconName);
-        }
-      }
-    }, {once: true});
-  }
-*/
-
-/*
-  static flipEventHandler(evt) {
-    if (evt.target.nodeName === 'DIV' && evt.target.classList.contains('back')) {
-      const card = evt.target.parentElement;
-      const iconName = Board.getCardIconName(card);
-      card.classList.add('flipped');
-      if (!Board.lastCard) {
-        Board.addToOpenCards(iconName);
-        this.lastCard = card;
-      }
-      else {
-        if (iconName === card.getCardIconName(this.lastCard)) {
-          this.handleMatch(card, iconName);
-        }
-        else {
-          this.handleMismatch(card, iconName);
-        }
-      }
-    }
-  }
-*/
 
   displayCards() {
     this.deck = Game.shuffle(this.deck);
@@ -229,6 +249,7 @@ class Board extends Game {
   startGame() {
     const deck = document.querySelector('.deck');
     this.displayCards();
+    super.startTimer();
     setTimeout(() => {
       deck.addEventListener('click', this.flipEventHandler);
     }, CARD_FLIP_SPEED);
@@ -239,15 +260,3 @@ class Board extends Game {
 
 const board = new Board();
 board.startGame();
-
-
-/*
- * set up the event listener for a card. If a card is clicked:
- *  - display the card's symbol (put this functionality in another function that you call from this one)
- *  - add the card to a *list* of "open" cards (put this functionality in another function that you call from this one)
- *  - if the list already has another card, check to see if the two cards match
- *    + if the cards do match, lock the cards in the open position (put this functionality in another function that you call from this one)
- *    + if the cards do not match, remove the cards from the list and hide the card's symbol (put this functionality in another function that you call from this one)
- *    + increment the move counter and display it on the page (put this functionality in another function that you call from this one)
- *    + if all cards have matched, display a message with the final score (put this functionality in another function that you call from this one)
- */
