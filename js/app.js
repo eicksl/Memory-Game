@@ -89,17 +89,45 @@ class Board extends Game {
     super();
     this.openCards = [];
     this.lastCard = null;
+
+    this.flipEventHandler = evt => {
+      const n = evt.target;
+      if (n.nodeName === 'DIV' && !n.parentElement.classList.contains('flipped')) {
+        const card = n.parentElement;
+        const iconName = this.getCardIconName(card);
+        card.classList.add('flipped');
+        if (!this.lastCard) {
+          this.addToOpenCards(iconName);
+          this.lastCard = card;
+        }
+        else {
+          if (iconName === this.getCardIconName(this.lastCard)) {
+            this.handleMatch(card, iconName);
+          }
+          else {
+            this.handleMismatch(card, iconName);
+          }
+        }
+      }
+    }
+
     document.querySelector('.restart').addEventListener('click', () => {
       this.restartGame();
     });
   }
 
   restartGame() {
-    super.removeCardEventListeners();
+    const deck = document.querySelector('.deck');
+    deck.removeEventListener('click', this.flipEventHandler);
+    this.openCards = [];
+    this.lastCard = null;
+    for (const card of this.cards) {
+      card.classList.remove('flipped');
+      setTimeout(() => card.firstElementChild.classList.remove('match'), 500);
+    }
     setTimeout(() => {
       this.startGame();
     }, CARD_FLIP_SPEED);
-
   }
 
   handleMatch(card, iconName) {
@@ -122,8 +150,8 @@ class Board extends Game {
     this.deleteFromOpenCards(iconName);
     setTimeout(() => {
       [card, lastCard].forEach(elem => {
-        elem.classList.toggle('flipped');
-        this.setFlipEvent(elem);
+        elem.classList.remove('flipped');
+        //this.setFlipEvent(elem);
         super.handleAnimation(elem, false);
       });
     }, CARD_FLIP_SPEED);
@@ -141,6 +169,8 @@ class Board extends Game {
     return card.firstElementChild.firstElementChild.classList[1];
   }
 
+
+/*
   setFlipEvent(card) {
     const self = this;
     card.addEventListener('click', function() {
@@ -160,6 +190,29 @@ class Board extends Game {
       }
     }, {once: true});
   }
+*/
+
+/*
+  static flipEventHandler(evt) {
+    if (evt.target.nodeName === 'DIV' && evt.target.classList.contains('back')) {
+      const card = evt.target.parentElement;
+      const iconName = Board.getCardIconName(card);
+      card.classList.add('flipped');
+      if (!Board.lastCard) {
+        Board.addToOpenCards(iconName);
+        this.lastCard = card;
+      }
+      else {
+        if (iconName === card.getCardIconName(this.lastCard)) {
+          this.handleMatch(card, iconName);
+        }
+        else {
+          this.handleMismatch(card, iconName);
+        }
+      }
+    }
+  }
+*/
 
   displayCards() {
     this.deck = Game.shuffle(this.deck);
@@ -168,18 +221,17 @@ class Board extends Game {
       const iconName = iconElem.classList[1];
       iconElem.classList.remove(iconName);
       iconElem.classList.add(this.deck[i]);
-      setTimeout(() => this.cards[i].classList.toggle('flipped'), 500);
-      setTimeout(() => this.cards[i].classList.toggle('flipped'), BOARD_PREVIEW);
+      setTimeout(() => this.cards[i].classList.add('flipped'), 500);
+      setTimeout(() => this.cards[i].classList.remove('flipped'), BOARD_PREVIEW);
     }
   }
 
   startGame() {
+    const deck = document.querySelector('.deck');
     this.displayCards();
     setTimeout(() => {
-      for (const card of this.cards) {
-        this.setFlipEvent(card);
-      }
-    }, BOARD_PREVIEW);
+      deck.addEventListener('click', this.flipEventHandler);
+    }, CARD_FLIP_SPEED);
   }
 
 }
