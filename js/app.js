@@ -209,7 +209,8 @@ class Board extends Game {
     this.flipEventHandler = evt => {
       const n = evt.target;
       // card parents within the deck element do not contain divs, so if the
-      // event target's node name is DIV we know it was a card that was clicked
+      // event target's node name is DIV we know it was a card that was clicked.
+      // We also don't want to do anything if the card has already been flipped.
       if (n.nodeName === 'DIV' && !n.parentElement.classList.contains('flipped')) {
         const card = n.parentElement;
         const iconName = this.getCardIconName(card);
@@ -341,6 +342,9 @@ class Board extends Game {
     this.displayCards();
     super.startTimer();
     setTimeout(() => {
+      // The handler here serves as an event delegate for its child card
+      // elements. It is also later used to remove the click listener when
+      // restarting the game
       deck.addEventListener('click', this.flipEventHandler);
     }, CARD_FLIP_SPEED);
   }
