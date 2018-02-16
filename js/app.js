@@ -48,12 +48,30 @@ class Game {
   }
 
   hideModals() {
-    const winning = document.getElementById('win-modal');
     const fireworks = document.getElementById('fireworks-modal');
-    const button = document.getElementById('btn-modal');
-    winning.style.display = 'none';
-    button.style.display = 'none';
+    document.getElementById('win-modal').style.display = 'none';
+    document.getElementById('btn-modal').style.display = 'none';
     setTimeout(() => fireworks.classList.remove('pyro'), BOARD_PREVIEW);
+  }
+
+  displayModals() {
+    const circleLoader = document.querySelector('.circle-loader');
+    const checkmark = document.querySelector('.checkmark');
+    const content = document.querySelector('.container');
+    content.className += ' animated zoomOutUp';
+    setTimeout(() => {
+      setTimeout(() => {
+        //$('.circle-loader').toggleClass('load-complete');
+        //$('.checkmark').toggle();
+
+        circleLoader.classList.add('load-complete');
+        checkmark.style.display = 'inherit';
+      }, 400);
+
+      document.getElementById('win-modal').style.display = 'flex';
+      document.getElementById('btn-modal').style.display = 'grid';
+      content.className.replace(' animated zoomOutUp', '');
+    }, 1000);
   }
 
   handleAnimation(card, match=false) {
@@ -167,10 +185,6 @@ class Game {
     this.updateRating();
   }
 
-  displayModal() {
-    console.log('Congratulations!');
-  }
-
 }
 
 
@@ -234,7 +248,7 @@ class Board extends Game {
     this.lastCard = null;
     this.addToOpenCards(iconName);
     if (this.openCards.length >= NUM_OF_CARDS) {
-      super.displayModal();
+      super.displayModals();
     }
     setTimeout(() => {
       [card, lastCard].forEach(elem => {
@@ -296,7 +310,7 @@ class Board extends Game {
       deck.addEventListener('click', this.flipEventHandler);
     }, CARD_FLIP_SPEED);
 
-
+    setTimeout(super.displayModals, 3000);
   }
 
 }

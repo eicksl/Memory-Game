@@ -10,6 +10,7 @@
   align-items: center;
   flex-direction: column;
   font-family: 'Nunito', sans-serif;
+  animation: fadein 2s;
   /* Background pattern from Subtle Patterns */
   background: #ffffff url('../img/geometry2.png');
 }
@@ -37,6 +38,7 @@ h2 {
   width: 100%;
   height: 100%;
   display: grid;
+  animation: fadein 1s;
 }
 
 .btn-wrapper .play-again {
@@ -64,4 +66,13 @@ h2 {
 
 .btn-wrapper .play-again:active {
   border-width: 3px;
+}
+
+@keyframes fadein {
+    from {
+        opacity:0;
+    }
+    to {
+        opacity:1;
+    }
 }
