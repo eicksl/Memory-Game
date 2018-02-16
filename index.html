@@ -1,5 +1,6 @@
 <!doctype html>
 <html lang="en">
+
 <head>
   <meta charset="utf-8">
   <title>Memory Game</title>
@@ -12,8 +13,41 @@
   <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Monoton">
   <link rel="stylesheet prefetch" href="https://fonts.googleapis.com/css?family=Coda">
   <link rel="stylesheet" href="css/app.css">
+  <link rel="stylesheet" href="css/circle-loader.css">
+  <link rel="stylesheet" href="css/fireworks.css">
+  <link rel="stylesheet" href="css/winning.css">
 </head>
+
 <body>
+  <div id="fireworks-modal" class="pyro">
+      <div class="before"></div>
+      <div class="after"></div>
+  </div>
+
+  <section id="win-modal" class="win-modal">
+      <div class="circle-loader">
+          <div class="checkmark draw"></div>
+      </div>
+      <h2 class="congrats">Congratulations! You won!</h2>
+
+          <ul class="results">
+              <li class="stars-li">
+                  Stars: <span class="stars-span">5</span>
+              </li>
+              <li class="matchrate-li">
+                  Match rate: <span class="matchrate-span">90%</span>
+              </li>
+              <li class="seconds-li">
+                  Time: <span class="seconds-span">160 seconds</span>
+              </li>
+          </ul>
+
+  </section>
+
+  <div id="btn-modal" class="btn-wrapper">
+      <div class="play-again">Play again!</div>
+  </div>
+
 
   <div class="container">
       <header>
@@ -22,20 +56,20 @@
 
       <section class="score-panel">
           <div class="score">
-          	<ul class="stars">
-            		<li><i class="fa fa-star"></i></li>
-            		<li><i class="fa fa-star"></i></li>
-            		<li><i class="fa fa-star"></i></li>
-                <li><i class="fa fa-star"></i></li>
-                <li><i class="fa fa-star"></i></li>
-          	</ul>
+            	<ul class="stars">
+              		<li><i class="fa fa-star"></i></li>
+              		<li><i class="fa fa-star"></i></li>
+              		<li><i class="fa fa-star"></i></li>
+                  <li><i class="fa fa-star"></i></li>
+                  <li><i class="fa fa-star"></i></li>
+            	</ul>
 
-            <div class="matches-attempts">
-            	<span class="matches">0</span>
-              <span class="matches-plural">Matches</span> out of
-              <span class="attempts">0</span>
-              <span class="attempts-plural">Attempts</span>
-            </div>
+              <div class="matches-attempts">
+                	<span class="matches">0</span>
+                  <span class="matches-plural">Matches</span> out of
+                  <span class="attempts">0</span>
+                  <span class="attempts-plural">Attempts</span>
+              </div>
           </div>
 
           <div class="restart">

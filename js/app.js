@@ -10,8 +10,10 @@ class Game {
                  'fa-paper-plane-o', 'fa-paper-plane-o', 'fa-bolt', 'fa-bolt',
                  'fa-cube', 'fa-cube', 'fa-bicycle', 'fa-bicycle',
                  'fa-bomb', 'fa-bomb', 'fa-leaf', 'fa-leaf'];
+    this.media = new Media();
     this.time = Math.ceil(BOARD_PREVIEW / -1000);
     this.counter = null;
+    this.restarted = false;  // true when game is restarted
     this.matches = 0;
     this.attempts = 0;
     // Find an AnimationEnd event that the browser recognizes
@@ -34,17 +36,24 @@ class Game {
 
   // Shuffle function from http://stackoverflow.com/a/2450976
   static shuffle(array) {
-      let currentIndex = array.length, temporaryValue, randomIndex;
+    let currentIndex = array.length, temporaryValue, randomIndex;
+    while (currentIndex !== 0) {
+      randomIndex = Math.floor(Math.random() * currentIndex);
+      currentIndex -= 1;
+      temporaryValue = array[currentIndex];
+      array[currentIndex] = array[randomIndex];
+      array[randomIndex] = temporaryValue;
+    }
+    return array;
+  }
 
-      while (currentIndex !== 0) {
-          randomIndex = Math.floor(Math.random() * currentIndex);
-          currentIndex -= 1;
-          temporaryValue = array[currentIndex];
-          array[currentIndex] = array[randomIndex];
-          array[randomIndex] = temporaryValue;
-      }
-
-      return array;
+  hideModals() {
+    const winning = document.getElementById('win-modal');
+    const fireworks = document.getElementById('fireworks-modal');
+    const button = document.getElementById('btn-modal');
+    winning.style.display = 'none';
+    button.style.display = 'none';
+    setTimeout(() => fireworks.classList.remove('pyro'), BOARD_PREVIEW);
   }
 
   handleAnimation(card, match=false) {
@@ -67,6 +76,14 @@ class Game {
     }
   }
 
+  zoomInContent() {
+    const content = document.querySelector('.container');
+    content.className += ' animated zoomInDown';
+    content.addEventListener(this.animationEnd, function() {
+      this.className = this.className.replace(' animated zoomInDown', '');
+    });
+  }
+
   startTimer() {
     const timeElem = document.querySelector('.time-int');
     const incrementTimer = () => {
@@ -86,6 +103,12 @@ class Game {
   incrementMatches() {
     const matchesElem = document.querySelector('.matches');
     let pluralSpan = document.querySelector('.matches-plural');
+    if (this.matches === null) {
+      this.matches = 0;
+      matchesElem.innerHTML = this.matches;
+      pluralSpan.innerHTML = 'Matches';
+      return;
+    }
     this.matches++;
     matchesElem.innerHTML = this.matches;
     if (this.matches === 1) {
@@ -99,6 +122,12 @@ class Game {
   incrementAttempts() {
     const attemptsElem = document.querySelector('.attempts');
     let pluralSpan = document.querySelector('.attempts-plural');
+    if (this.attempts === null) {
+      this.attempts = 0;
+      attemptsElem.innerHTML = this.attempts;
+      pluralSpan.innerHTML = 'Attempts';
+      return;
+    }
     this.attempts++;
     attemptsElem.innerHTML = this.attempts;
     if (this.attempts === 1) {
@@ -110,10 +139,13 @@ class Game {
   }
 
   updateRating() {
-    if (this.attempts === 0) {return}
-    const matchRate = this.matches / this.attempts;
     const starElem = document.querySelector('.stars');
-    const star = '<li><i class="fa fa-star"></i></li>';
+    const star = `<li><i class="fa fa-star"></i></li>`;
+    if (this.attempts === 0) {
+      starElem.innerHTML = star.repeat(5);
+      return;
+    }
+    const matchRate = this.matches / this.attempts;
     if (matchRate >= 0.8) {
         starElem.innerHTML = star.repeat(5);
     } else if (matchRate >= 0.6) {
@@ -154,6 +186,7 @@ class Board extends Game {
         const card = n.parentElement;
         const iconName = this.getCardIconName(card);
         card.classList.add('flipped');
+        this.media.playSound('flip');
         if (!this.lastCard) {
           this.addToOpenCards(iconName);
           this.lastCard = card;
@@ -178,10 +211,12 @@ class Board extends Game {
     const clearFields = () => {
       this.openCards = [];
       this.lastCard = null;
-      this.matches = 0;
-      this.attempts = 0;
+      this.matches = null;
+      this.attempts = null;
+      super.updateScore();
     }
     const deck = document.querySelector('.deck');
+    this.restarted = true;
     deck.removeEventListener('click', this.flipEventHandler);
     super.stopTimer();
     clearFields();
@@ -204,6 +239,7 @@ class Board extends Game {
     setTimeout(() => {
       [card, lastCard].forEach(elem => {
         super.handleAnimation(elem, true);
+        this.media.playSound('match');
       });
       super.updateScore();
     }, CARD_FLIP_SPEED);
@@ -217,6 +253,7 @@ class Board extends Game {
       [card, lastCard].forEach(elem => {
         elem.classList.remove('flipped');
         super.handleAnimation(elem, false);
+        this.media.playSound('mismatch');
       });
       super.updateScore(false);
     }, CARD_FLIP_SPEED);
@@ -247,12 +284,45 @@ class Board extends Game {
   }
 
   startGame() {
+    super.hideModals();
+    if (!this.restarted) {
+      super.zoomInContent();
+    }
     const deck = document.querySelector('.deck');
+    this.media.playGameStart();
     this.displayCards();
     super.startTimer();
     setTimeout(() => {
       deck.addEventListener('click', this.flipEventHandler);
     }, CARD_FLIP_SPEED);
+
+
+  }
+
+}
+
+// The Media class currently uses audio files taken from the pokerstars.com
+// desktop client application
+class Media {
+  playGameStart() {
+    let file = new Audio('sounds/start1.wav');
+    file.play();
+    file.onended = () => {
+      file = new Audio('sounds/start2.wav');
+      file.play();
+      file.onended = () => {
+        file = new Audio('sounds/start3.wav');
+        file.play();
+        file.onended = () => file = null;
+      }
+    }
+  }
+
+  playSound(sound) {
+    const path = `sounds/${sound}.wav`;
+    let file = new Audio(path);
+    file.play();
+    file.onended = () => file = null;
   }
 
 }

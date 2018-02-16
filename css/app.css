@@ -14,11 +14,12 @@ body {
   height: 100%;
   margin: 0;
   padding: 0;
+  overflow: hidden;
 }
 
 body {
   /* Background pattern from Subtle Patterns */
-  background: #ffffff url('../img/geometry2.png');
+  background: url('../img/geometry2.png');
   font-family: 'Coda', cursive;
 }
 
@@ -30,11 +31,8 @@ body {
 }
 
 h1 {
-  /*
-  font-family: 'Open Sans', sans-serif;
-  font-weight: 300;
-  */
   font-family: Monoton;
+  color: #0b0b2d;
   font-size: 50px;
   margin: 10px;
 }
@@ -96,6 +94,7 @@ h1 {
 }
 
 .deck .wrapper .card .back {
+  /* Card pattern from Subtle Patterns */
   background: url('../img/dark_embroidery.png');
   cursor: pointer;
 }
@@ -123,9 +122,14 @@ h1 {
   width: 300px;
 }
 
-.score-panel .matches-attempts {
+.score-panel .score .matches-attempts {
   display: inline-block;
   float: right;
+}
+
+.score-panel .score .matches-attempts .matches,
+.score-panel .score .matches-attempts .attempts {
+  font-weight: bold;
 }
 
 .score-panel .stars {
@@ -138,6 +142,10 @@ h1 {
 .score-panel .score .stars li {
   list-style: none;
   display: inline-block;
+}
+
+.score-panel .score .stars li .fa.fa-star {
+  color: #d4d422;
 }
 
 .score-panel .restart {
