@@ -10,28 +10,11 @@ class Game {
                  'fa-paper-plane-o', 'fa-paper-plane-o', 'fa-bolt', 'fa-bolt',
                  'fa-cube', 'fa-cube', 'fa-bicycle', 'fa-bicycle',
                  'fa-bomb', 'fa-bomb', 'fa-leaf', 'fa-leaf'];
-    this.media = new Media();
     this.time = Math.ceil(BOARD_PREVIEW / -1000);
     this.counter = null;
     this.restarted = false;  // true when game is restarted
     this.matches = 0;
     this.attempts = 0;
-    // Find an AnimationEnd event that the browser recognizes
-    // Taken from https://github.com/daneden/animate.css
-    this.animationEnd = (function(el) {
-      const animations = {
-        animation: 'animationend',
-        OAnimation: 'oAnimationEnd',
-        MozAnimation: 'mozAnimationEnd',
-        WebkitAnimation: 'webkitAnimationEnd',
-      };
-
-      for (const t in animations) {
-        if (el.style[t] !== undefined) {
-          return animations[t];
-        }
-      }
-    })(document.createElement('div'));
   }
 
   // Shuffle function from http://stackoverflow.com/a/2450976
@@ -47,7 +30,24 @@ class Game {
     return array;
   }
 
-  hideModals() {
+  static flipAndRemoveMatched() {
+    const cards = document.getElementsByClassName('card');
+    for (const card of cards) {
+      card.classList.remove('flipped');
+      setTimeout(() => card.firstElementChild.classList.remove('match'), 500);
+    }
+  }
+
+  // Animation
+  static zoomInContent() {
+    const content = document.querySelector('.container');
+    content.className = 'container animated zoomInDown';
+    content.addEventListener('animationend', function() {
+      this.className = 'container';
+    }, {once: true});
+  }
+
+  static hideModals() {
     const fireworks = document.getElementById('fireworks-modal');
     document.getElementById('win-modal').style.display = 'none';
     document.getElementById('btn-modal').style.display = 'none';
@@ -58,48 +58,59 @@ class Game {
     const circleLoader = document.querySelector('.circle-loader');
     const checkmark = document.querySelector('.checkmark');
     const content = document.querySelector('.container');
-    content.className += ' animated zoomOutUp';
-    setTimeout(() => {
-      setTimeout(() => {
-        //$('.circle-loader').toggleClass('load-complete');
-        //$('.checkmark').toggle();
 
-        circleLoader.classList.add('load-complete');
-        checkmark.style.display = 'inherit';
-      }, 400);
+    content.className = 'container animated zoomOutUp';
+    content.addEventListener('animationend', evt => {
 
+      if (evt.target.nodeName !== 'DIV') {return}
+      const btn = document.getElementById('btn-modal');
+      const fireworks = document.getElementById('fireworks-modal');
+
+      fireworks.classList.add('pyro');
+      circleLoader.classList.add('load-complete');
+      checkmark.style.display = 'inherit';
       document.getElementById('win-modal').style.display = 'flex';
-      document.getElementById('btn-modal').style.display = 'grid';
-      content.className.replace(' animated zoomOutUp', '');
-    }, 1000);
+      btn.style.display = 'grid';
+      Media.playSound('winning');
+    }, {once: true, capture: true});
+
   }
 
-  handleAnimation(card, match=false) {
+  displayResults() {
+    const stars = document.querySelector('.stars').children.length;
+    const matchRate = Math.round(this.matches / this.attempts * 100) + '%';
+    const seconds = this.time + ' seconds';
+    document.querySelector('.stars-span').innerHTML = stars;
+    document.querySelector('.matchrate-span').innerHTML = matchRate;
+    document.querySelector('.seconds-span').innerHTML = seconds;
+  }
+
+  // Handles the animation for a card when after the user matches or
+  // mismatches
+  handleAnimation(card, match=false, gameWon=false) {
     const wrapperElem = card.parentElement;
     const frontElem = card.firstElementChild;
+    const self = this;
     if (match) {
       wrapperElem.className += ' animated bounceIn';
-      wrapperElem.addEventListener(this.animationEnd, function() {
+      wrapperElem.addEventListener('animationend', function() {
         this.className = this.className.replace(' animated bounceIn', '');
-      });
+        if (gameWon) {
+          Game.flipAndRemoveMatched();
+          setTimeout(self.displayModals, CARD_FLIP_SPEED);
+          self.displayResults();
+        }
+      }, {once: true});
       frontElem.className += ' match';
     }
     else {
       wrapperElem.className += ' animated wobble';
-      wrapperElem.addEventListener(this.animationEnd, function() {
+      wrapperElem.addEventListener('animationend', function() {
         this.className = this.className.replace(' animated wobble', '');
-      });
+      }, {once: true});
       frontElem.className += ' mismatch';
       setTimeout(() => frontElem.classList.remove('mismatch'), 500);
     }
-  }
-
-  zoomInContent() {
-    const content = document.querySelector('.container');
-    content.className += ' animated zoomInDown';
-    content.addEventListener(this.animationEnd, function() {
-      this.className = this.className.replace(' animated zoomInDown', '');
-    });
   }
 
   startTimer() {
@@ -193,14 +204,17 @@ class Board extends Game {
     super();
     this.openCards = [];
     this.lastCard = null;
-
+    // Defining the handler here in the contructor allows it to be used later
+    // to remove the event listener
     this.flipEventHandler = evt => {
       const n = evt.target;
+      // card parents within the deck element do not contain divs, so if the
+      // event target's node name is DIV we know it was a card that was clicked
       if (n.nodeName === 'DIV' && !n.parentElement.classList.contains('flipped')) {
         const card = n.parentElement;
         const iconName = this.getCardIconName(card);
         card.classList.add('flipped');
-        this.media.playSound('flip');
+        Media.playSound('flip');
         if (!this.lastCard) {
           this.addToOpenCards(iconName);
           this.lastCard = card;
@@ -214,14 +228,30 @@ class Board extends Game {
           }
         }
       }
+
     }
 
     document.querySelector('.restart').addEventListener('click', () => {
+      this.restarted = true;
       this.restartGame();
+    });
+    document.querySelector('#btn-modal').addEventListener('click', () => {
+      const circleLoader = document.querySelector('.circle-loader');
+      const checkmark = document.querySelector('.checkmark');
+      const content = document.querySelector('.container');
+      // remove solid checkmark state
+      circleLoader.classList.remove('load-complete');
+      checkmark.style.display = 'none';
+      // remove container's animated state
+      content.className = 'container animated zoomInDown';
+      this.restarted = false;
+      this.restartGame(false);
     });
   }
 
-  restartGame() {
+  // wait is false when either first loading the game or when restarting
+  // from the win view modal
+  restartGame(wait=true) {
     const clearFields = () => {
       this.openCards = [];
       this.lastCard = null;
@@ -230,30 +260,31 @@ class Board extends Game {
       super.updateScore();
     }
     const deck = document.querySelector('.deck');
-    this.restarted = true;
     deck.removeEventListener('click', this.flipEventHandler);
     super.stopTimer();
     clearFields();
-    for (const card of this.cards) {
-      card.classList.remove('flipped');
-      setTimeout(() => card.firstElementChild.classList.remove('match'), 500);
+
+    if (wait) {
+      Game.flipAndRemoveMatched();
+      setTimeout(() => this.startGame(), CARD_FLIP_SPEED);
     }
-    setTimeout(() => {
+    else {
       this.startGame();
-    }, CARD_FLIP_SPEED);
+    }
   }
 
   handleMatch(card, iconName) {
     const lastCard = this.lastCard;
+    let gameWon = false;
     this.lastCard = null;
     this.addToOpenCards(iconName);
     if (this.openCards.length >= NUM_OF_CARDS) {
-      super.displayModals();
+      gameWon = true;
     }
     setTimeout(() => {
       [card, lastCard].forEach(elem => {
-        super.handleAnimation(elem, true);
-        this.media.playSound('match');
+        super.handleAnimation(elem, true, gameWon);
+        Media.playSound('match');
       });
       super.updateScore();
     }, CARD_FLIP_SPEED);
@@ -267,7 +298,7 @@ class Board extends Game {
       [card, lastCard].forEach(elem => {
         elem.classList.remove('flipped');
         super.handleAnimation(elem, false);
-        this.media.playSound('mismatch');
+        Media.playSound('mismatch');
       });
       super.updateScore(false);
     }, CARD_FLIP_SPEED);
@@ -285,6 +316,7 @@ class Board extends Game {
     return card.firstElementChild.firstElementChild.classList[1];
   }
 
+  // Get a randomized board and display it using timeouts
   displayCards() {
     this.deck = Game.shuffle(this.deck);
     for (let i = 0; i < this.deck.length; i++) {
@@ -297,20 +329,20 @@ class Board extends Game {
     }
   }
 
+  // Do not animate zoom in or alter modal attributes if reset button
+  // was clicked
   startGame() {
-    super.hideModals();
     if (!this.restarted) {
-      super.zoomInContent();
+      Game.hideModals();
+      Game.zoomInContent();
     }
     const deck = document.querySelector('.deck');
-    this.media.playGameStart();
+    Media.playGameStart();
     this.displayCards();
     super.startTimer();
     setTimeout(() => {
       deck.addEventListener('click', this.flipEventHandler);
     }, CARD_FLIP_SPEED);
-
-    setTimeout(super.displayModals, 3000);
   }
 
 }
@@ -318,7 +350,7 @@ class Board extends Game {
 // The Media class currently uses audio files taken from the pokerstars.com
 // desktop client application
 class Media {
-  playGameStart() {
+  static playGameStart() {
     let file = new Audio('sounds/start1.wav');
     file.play();
     file.onended = () => {
@@ -332,7 +364,7 @@ class Media {
     }
   }
 
-  playSound(sound) {
+  static playSound(sound) {
     const path = `sounds/${sound}.wav`;
     let file = new Audio(path);
     file.play();
