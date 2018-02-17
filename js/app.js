@@ -184,7 +184,8 @@ class Game {
   updateRating() {
     const starElem = document.querySelector('.stars');
     const star = `<li><i class="fa fa-star"></i></li>`;
-    if (this.attempts === 0) {
+    // exit function if attempts is zero (game was restarted)
+    if (!this.attempts) {
       starElem.innerHTML = star.repeat(5);
       return;
     }
