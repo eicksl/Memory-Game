@@ -3,6 +3,7 @@ const CARD_FLIP_SPEED = 1000;
 const BOARD_PREVIEW = 6500;  // Milliseconds to preview cards at start
 
 
+// The Game class controls general features of the game unrelated to the board
 class Game {
   constructor() {
     this.cards = document.getElementsByClassName('card');
@@ -30,6 +31,8 @@ class Game {
     return array;
   }
 
+  // Flip over any face-up cards and change its color back to normal by
+  // removing the .match class
   static flipAndRemoveMatched() {
     const cards = document.getElementsByClassName('card');
     for (const card of cards) {
@@ -47,6 +50,8 @@ class Game {
     }, {once: true});
   }
 
+  // Sets the display property for the results view and play again button to
+  // none. The .pyro class that controls the fireworks is also removed.
   static hideModals() {
     const fireworks = document.getElementById('fireworks-modal');
     document.getElementById('win-modal').style.display = 'none';
@@ -54,6 +59,7 @@ class Game {
     setTimeout(() => fireworks.classList.remove('pyro'), BOARD_PREVIEW);
   }
 
+  // Display the results results view.
   displayModals() {
     const circleLoader = document.querySelector('.circle-loader');
     const checkmark = document.querySelector('.checkmark');
@@ -61,8 +67,10 @@ class Game {
 
     content.className = 'container animated zoomOutUp';
     content.addEventListener('animationend', evt => {
-
+      // if the final card match animation has triggered this listener,
+      // simply ignore it
       if (evt.target.nodeName !== 'DIV') {return}
+
       const btn = document.getElementById('btn-modal');
       const fireworks = document.getElementById('fireworks-modal');
 
@@ -73,9 +81,9 @@ class Game {
       btn.style.display = 'grid';
       Media.playSound('winning');
     }, {once: true, capture: true});
-
   }
 
+  // Render the appropriate scores on the results view
   displayResults() {
     const stars = document.querySelector('.stars').children.length;
     const matchRate = Math.round(this.matches / this.attempts * 100) + '%';
@@ -105,6 +113,7 @@ class Game {
     }
     else {
       wrapperElem.className += ' animated wobble';
+      // wait until the animation ends and then remove the animate.css classes
       wrapperElem.addEventListener('animationend', function() {
         this.className = this.className.replace(' animated wobble', '');
       }, {once: true});
@@ -113,6 +122,7 @@ class Game {
     }
   }
 
+  // Set a one-second interval for the timer
   startTimer() {
     const timeElem = document.querySelector('.time-int');
     const incrementTimer = () => {
@@ -122,6 +132,7 @@ class Game {
     this.counter = setInterval(incrementTimer, 1000);
   }
 
+  // Clears the timer interval
   stopTimer() {
     const timeElem = document.querySelector('.time-int');
     clearInterval(this.counter);
@@ -129,6 +140,7 @@ class Game {
     this.time = Math.ceil(BOARD_PREVIEW / -1000);
   }
 
+  // Renders the correct number of matches with regard to plurality/singularity
   incrementMatches() {
     const matchesElem = document.querySelector('.matches');
     let pluralSpan = document.querySelector('.matches-plural');
@@ -148,6 +160,7 @@ class Game {
     }
   }
 
+  // Renders the correct number of attempts with regard to plurality/singularity
   incrementAttempts() {
     const attemptsElem = document.querySelector('.attempts');
     let pluralSpan = document.querySelector('.attempts-plural');
@@ -167,6 +180,7 @@ class Game {
     }
   }
 
+  // Renders the appropriate star rating based on the match success rate
   updateRating() {
     const starElem = document.querySelector('.stars');
     const star = `<li><i class="fa fa-star"></i></li>`;
@@ -188,6 +202,8 @@ class Game {
     }
   }
 
+  // Updates only attempts and star rating if a card was matched,
+  // else updates all three
   updateScore(match=true) {
     if (match) {
       this.incrementMatches();
@@ -199,6 +215,7 @@ class Game {
 }
 
 
+// The Board class controls functionality specific to the board of the game
 class Board extends Game {
   constructor() {
     super();
@@ -208,7 +225,7 @@ class Board extends Game {
     // to remove the event listener
     this.flipEventHandler = evt => {
       const n = evt.target;
-      // card parents within the deck element do not contain divs, so if the
+      // .card parents within the deck element do not contain divs, so if the
       // event target's node name is DIV we know it was a card that was clicked.
       // We also don't want to do anything if the card has already been flipped.
       if (n.nodeName === 'DIV' && !n.parentElement.classList.contains('flipped')) {
@@ -231,11 +248,12 @@ class Board extends Game {
       }
 
     }
-
+    // when game is reset from the game view
     document.querySelector('.restart').addEventListener('click', () => {
       this.restarted = true;
       this.restartGame();
     });
+    // when restarted from the results (winning.css) view
     document.querySelector('#btn-modal').addEventListener('click', () => {
       const circleLoader = document.querySelector('.circle-loader');
       const checkmark = document.querySelector('.checkmark');
@@ -250,8 +268,8 @@ class Board extends Game {
     });
   }
 
-  // wait is false when either first loading the game or when restarting
-  // from the win view modal
+  // Clears fields and restarts the game. wait is false when either first
+  // loading the game or when restarting from the win view modal.
   restartGame(wait=true) {
     const clearFields = () => {
       this.openCards = [];
@@ -274,6 +292,8 @@ class Board extends Game {
     }
   }
 
+  // Wait for flip animation to complete, then render the match animation
+  // and the new score
   handleMatch(card, iconName) {
     const lastCard = this.lastCard;
     let gameWon = false;
@@ -291,6 +311,8 @@ class Board extends Game {
     }, CARD_FLIP_SPEED);
   }
 
+  // Wait for flip animation to complete, then render the mismatch animation
+  // and the new score
   handleMismatch(card, iconName) {
     const lastCard = this.lastCard;
     this.lastCard = null;
@@ -305,14 +327,17 @@ class Board extends Game {
     }, CARD_FLIP_SPEED);
   }
 
+  // Pushes the name of the Bootstrap icon to the openCards array of strings
   addToOpenCards(iconName) {
     this.openCards.push(iconName);
   }
 
+  // Pops the name of the Bootstrap icon from the openCards array of strings
   deleteFromOpenCards(iconName) {
     this.openCards.pop(iconName);
   }
 
+  // Returns the name of the Bootstrap icon as a string
   getCardIconName(card) {
     return card.firstElementChild.firstElementChild.classList[1];
   }
@@ -354,6 +379,7 @@ class Board extends Game {
 // The Media class currently uses audio files taken from the pokerstars.com
 // desktop client application
 class Media {
+  // Plays three audio files in sequence, then dumps the Audio object
   static playGameStart() {
     let file = new Audio('sounds/start1.wav');
     file.play();
@@ -368,6 +394,8 @@ class Media {
     }
   }
 
+  // Takes in a string as a parameter and plays the appropriate audio file,
+  // dumping the Audio object after the audio finishes
   static playSound(sound) {
     const path = `sounds/${sound}.wav`;
     let file = new Audio(path);
