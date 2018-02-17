@@ -75,8 +75,13 @@ class Game {
       const fireworks = document.getElementById('fireworks-modal');
 
       fireworks.classList.add('pyro');
-      circleLoader.classList.add('load-complete');
-      checkmark.style.display = 'inherit';
+      // checkmark animation
+      setTimeout(() => {
+        circleLoader.classList.add('load-complete');
+        checkmark.style.display = 'inherit';
+      }, 300);
+      //circleLoader.classList.add('load-complete');
+      //checkmark.style.display = 'inherit';
       document.getElementById('win-modal').style.display = 'flex';
       btn.style.display = 'grid';
       Media.playSound('winning');
