@@ -98,7 +98,7 @@ class Game {
     document.querySelector('.seconds-span').innerHTML = seconds;
   }
 
-  // Handles the animation for a card when after the user matches or
+  // Handles the animation for a card after the user matches or
   // mismatches
   handleAnimation(card, match=false, gameWon=false) {
     const wrapperElem = card.parentElement;
@@ -254,11 +254,11 @@ class Board extends Game {
       }
 
     }
-    // when game is reset from the game view
-    document.querySelector('.restart').addEventListener('click', () => {
+    // event handler for when game is reset from the game view
+    this.restartHandler = () => {
       this.restarted = true;
       this.restartGame();
-    });
+    }
     // when restarted from the results (winning.css) view
     document.querySelector('#btn-modal').addEventListener('click', () => {
       const circleLoader = document.querySelector('.circle-loader');
@@ -285,7 +285,10 @@ class Board extends Game {
       super.updateScore();
     }
     const deck = document.querySelector('.deck');
+    const restart = document.querySelector('.restart');
     deck.removeEventListener('click', this.flipEventHandler);
+    restart.removeEventListener('click', this.restartHandler);
+    restart.style.cursor = 'default';
     super.stopTimer();
     clearFields();
 
@@ -358,10 +361,15 @@ class Board extends Game {
       iconElem.classList.add(this.deck[i]);
       setTimeout(() => this.cards[i].classList.add('flipped'), 500);
       setTimeout(() => this.cards[i].classList.remove('flipped'), BOARD_PREVIEW);
+      setTimeout(() => {
+        const restart = document.querySelector('.restart');
+        restart.addEventListener('click', this.restartHandler);
+        restart.style.cursor = 'pointer';
+      }, BOARD_PREVIEW + 500);
     }
   }
 
-  // Do not animate zoom in or alter modal attributes if reset button
+  // Do not animate zoom-in or alter modal attributes if reset button
   // was clicked
   startGame() {
     if (!this.restarted) {
@@ -375,7 +383,7 @@ class Board extends Game {
     setTimeout(() => {
       // The handler here serves as an event delegate for its child card
       // elements. It is also later used to remove the click listener when
-      // restarting the game
+      // restarting the game.
       deck.addEventListener('click', this.flipEventHandler);
     }, CARD_FLIP_SPEED);
   }
