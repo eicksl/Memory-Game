@@ -1,6 +1,15 @@
 const NUM_OF_CARDS = 16;
 const CARD_FLIP_SPEED = 1000;
 const BOARD_PREVIEW = 6500;  // Milliseconds to preview cards at start
+const sounds = {
+  start1: new Audio('sounds/start1.wav'),
+  start2: new Audio('sounds/start2.wav'),
+  start3: new Audio('sounds/start3.wav'),
+  flip: new Audio('sounds/flip.wav'),
+  match: new Audio('sounds/match.wav'),
+  mismatch: new Audio('sounds/mismatch.wav'),
+  winning: new Audio('sounds/winning.wav')
+};
 
 
 // The Game class controls general features of the game unrelated to the board
@@ -54,6 +63,7 @@ class Game {
   // none. The .pyro class that controls the fireworks is also removed.
   static hideModals() {
     const fireworks = document.getElementById('fireworks-modal');
+    document.getElementById('start-modal').style.display = 'none';
     document.getElementById('win-modal').style.display = 'none';
     document.getElementById('btn-modal').style.display = 'none';
     setTimeout(() => fireworks.classList.remove('pyro'), BOARD_PREVIEW);
@@ -318,6 +328,17 @@ class Board extends Game {
       });
       super.updateScore();
     }, CARD_FLIP_SPEED);
+
+    const fireworks = document.getElementById('fireworks-modal');
+    setTimeout(() => {
+      fireworks.classList.add('pyro');
+      fireworks.style.zIndex = -1;
+    }, 1000);
+    setTimeout(() => {
+      fireworks.classList.remove('pyro');
+      fireworks.style.zIndex = 2;
+    }, 3000);
+
   }
 
   // Wait for flip animation to complete, then render the mismatch animation
@@ -393,32 +414,28 @@ class Board extends Game {
 // The Media class currently uses audio files taken from the pokerstars.com
 // desktop client application
 class Media {
-  // Plays three audio files in sequence, then dumps the Audio object
+  // Plays three audio files in sequence
   static playGameStart() {
-    let file = new Audio('sounds/start1.wav');
-    file.play();
-    file.onended = () => {
-      file = new Audio('sounds/start2.wav');
-      file.play();
-      file.onended = () => {
-        file = new Audio('sounds/start3.wav');
-        file.play();
-        file.onended = () => file = null;
+    sounds.start1.play();
+    sounds.start1.onended = () => {
+      sounds.start2.play();
+      sounds.start2.onended = () => {
+        sounds.start3.play();
       }
     }
   }
 
-  // Takes in a string as a parameter and plays the appropriate audio file,
-  // dumping the Audio object after the audio finishes
-  static playSound(sound) {
-    const path = `sounds/${sound}.wav`;
-    let file = new Audio(path);
-    file.play();
-    file.onended = () => file = null;
+  // Takes in a string as a parameter and plays the appropriate audio file
+  static playSound(name) {
+    sounds[name].play();
   }
 
 }
 
 
 const board = new Board();
-board.startGame();
+const startCb = () => {
+  document.removeEventListener('keydown', startCb);
+  board.startGame();
+};
+document.addEventListener('keydown', startCb);
