@@ -427,7 +427,9 @@ class Media {
 
   // Takes in a string as a parameter and plays the appropriate audio file
   static playSound(name) {
-    sounds[name].play();
+    const path = `sounds/${name}.wav`;
+    let file = new Audio(path);
+    file.play();
   }
 
 }
